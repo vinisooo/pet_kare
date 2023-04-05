@@ -52,3 +52,12 @@ class PetsDetailView(APIView):
         serializer = PetSerializer(pet)
 
         return Response(serializer.data, status.HTTP_200_OK)
+
+    def delete(self, request, pet_id):
+        try:
+            pet = Pet.objects.get(id=pet_id)
+        except Pet.DoesNotExist:
+            return Response({"detail": "Not found"}, status.HTTP_404_NOT_FOUND)
+        pet.delete()
+
+        return Response(model_to_dict(pet), status.HTTP_204_NO_CONTENT)
