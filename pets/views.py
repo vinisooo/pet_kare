@@ -41,3 +41,14 @@ class PetsView(APIView, PageNumberPagination):
         serializer = PetSerializer(result_page, many=True)
 
         return self.get_paginated_response(serializer.data)
+
+
+class PetsDetailView(APIView):
+    def get(self, request, pet_id):
+        try:
+            pet = Pet.objects.get(id=pet_id)
+        except Pet.DoesNotExist:
+            return Response({"detail": "Not found"}, status.HTTP_404_NOT_FOUND)
+        serializer = PetSerializer(pet)
+
+        return Response(serializer.data, status.HTTP_200_OK)
