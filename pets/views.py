@@ -61,3 +61,39 @@ class PetsDetailView(APIView):
         pet.delete()
 
         return Response(model_to_dict(pet), status.HTTP_204_NO_CONTENT)
+
+    def patch(self, request, pet_id):
+        try:
+            pet = Pet.objects.get(id=pet_id)
+        except Pet.DoesNotExist:
+            return Response({"detail": "Not found"}, status.HTTP_404_NOT_FOUND)
+
+        serializer = PetSerializer(pet, data=request.data, partial=True)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
+
+        traits = serializer.validated_data.pop("traits", None)
+        group = serializer.validated_data.pop("group", None)
+
+        for key, value in serializer.validated_data.items():
+            setattr(pet, key, value)
+
+        if group:
+            group, _ = Group.objects.get_or_create(
+                scientific_name__iexact=group["scientific_name"], defaults=group
+            )
+            pet.group = group
+
+        if traits:
+            pet.traits.clear()
+            for trait_data in traits:
+                trait, _ = Trait.objects.get_or_create(
+                    name__iexact=trait_data["name"], defaults=trait_data
+                )
+                pet.traits.add(trait)
+
+        pet.save()
+
+        response_data = PetSerializer(pet).data
+        return Response(response_data, status.HTTP_200_OK)
