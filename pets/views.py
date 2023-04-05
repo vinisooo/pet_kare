@@ -20,15 +20,20 @@ class PetsView(APIView, PageNumberPagination):
 
         group = serializer.validated_data.pop("group")
 
-        group, created = Group.objects.get_or_create(**group)
+        group, created = Group.objects.get_or_create(
+            scientific_name__iexact=group["scientific_name"], defaults=group
+        )
 
         traits = serializer.validated_data.pop("traits")
         pet = Pet.objects.create(**serializer.validated_data, group=group)
         for trait_data in traits:
-            trait, created = Trait.objects.get_or_create(name=trait_data["name"])
+            trait, created = Trait.objects.get_or_create(
+                name__iexact=trait_data["name"], defaults=trait_data
+            )
             pet.traits.add(trait)
 
-        return Response(model_to_dict(pet), status.HTTP_201_CREATED)
+        response_data = PetSerializer(pet).data
+        return Response(response_data, status.HTTP_201_CREATED)
 
     def get(self, request):
         pets = Pet.objects.all()
