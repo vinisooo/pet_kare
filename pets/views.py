@@ -37,6 +37,12 @@ class PetsView(APIView, PageNumberPagination):
 
     def get(self, request):
         pets = Pet.objects.all()
+
+        query_trait = request.query_params.get("trait", None)
+
+        if query_trait:
+            pets = Pet.objects.filter(traits__name__iexact=query_trait)
+
         result_page = self.paginate_queryset(pets, request, view=self)
         serializer = PetSerializer(result_page, many=True)
 
@@ -48,7 +54,7 @@ class PetsDetailView(APIView):
         try:
             pet = Pet.objects.get(id=pet_id)
         except Pet.DoesNotExist:
-            return Response({"detail": "Not found"}, status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Not found."}, status.HTTP_404_NOT_FOUND)
         serializer = PetSerializer(pet)
 
         return Response(serializer.data, status.HTTP_200_OK)
@@ -57,7 +63,7 @@ class PetsDetailView(APIView):
         try:
             pet = Pet.objects.get(id=pet_id)
         except Pet.DoesNotExist:
-            return Response({"detail": "Not found"}, status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Not found."}, status.HTTP_404_NOT_FOUND)
         pet.delete()
 
         return Response(model_to_dict(pet), status.HTTP_204_NO_CONTENT)
@@ -66,7 +72,7 @@ class PetsDetailView(APIView):
         try:
             pet = Pet.objects.get(id=pet_id)
         except Pet.DoesNotExist:
-            return Response({"detail": "Not found"}, status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Not found."}, status.HTTP_404_NOT_FOUND)
 
         serializer = PetSerializer(pet, data=request.data, partial=True)
 
