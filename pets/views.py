@@ -2,16 +2,16 @@ from django.shortcuts import render
 from django.forms.models import model_to_dict
 from rest_framework.views import APIView, status
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 
 from .serializers import PetSerializer
-from groups.serializers import GroupSerializer
 
 from .models import Pet
 from groups.models import Group
 from traits.models import Trait
 
 
-class PetsView(APIView):
+class PetsView(APIView, PageNumberPagination):
     def post(self, request):
         serializer = PetSerializer(data=request.data)
 
@@ -29,3 +29,10 @@ class PetsView(APIView):
             pet.traits.add(trait)
 
         return Response(model_to_dict(pet), status.HTTP_201_CREATED)
+
+    def get(self, request):
+        pets = Pet.objects.all()
+        result_page = self.paginate_queryset(pets, request, view=self)
+        serializer = PetSerializer(result_page, many=True)
+
+        return self.get_paginated_response(serializer.data)
